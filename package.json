@@ -1,0 +1,16 @@
+{
+  "name": "gsm-t-voice-agent",
+  "version": "1.0.0",
+  "description": "Golden State Medical Transport voice AI agent using Twilio, OpenAI and Amazon Polly.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-polly": "^3.515.0",
+    "axios": "^1.5.0",
+    "express": "^4.18.2",
+    "twilio": "^4.5.0",
+    "ws": "^8.12.1"
+  }
+}
