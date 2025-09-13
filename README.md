@@ -9,8 +9,9 @@ This project implements a full stack prototype of a voice assistant for Golden S
 1. **Twilio account & phone number** with Programmable Voice enabled.  You will configure the phone number's voice webhook to point at your Cloud Run service.
 2. **AWS credentials** with permission to call Amazon Polly.  You can supply these via environment variables (e.g. `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) or by configuring an IAM role for Cloud Run.  Set `AWS_REGION` and `AWS_POLLY_VOICE` accordingly.
 3. **OpenAI API key** if you plan to use ChatGPT (or any other OpenAI LLM) for generating responses.  Set `OPENAI_API_KEY` and optionally `OPENAI_MODEL` in your environment.  The code defaults to `gpt-3.5-turbo`.
-4. **Google Cloud project** with Cloud Run enabled.  You'll containerise this application and deploy it here.
-5. **Node.js** installed locally if you wish to run or test the service outside of Cloud Run.
+4. **Google Speech‑to‑Text API key (optional)** if you want the assistant to automatically transcribe the caller’s audio.  Set `GOOGLE_SPEECH_API_KEY` to a valid key for the Google Speech API.  If this variable is unset the server will skip speech recognition and rely on the fallback echo logic.
+5. **Google Cloud project** with Cloud Run enabled.  You'll containerise this application and deploy it here.
+6. **Node.js** installed locally if you wish to run or test the service outside of Cloud Run.
 
 ## Installation and Local Testing
 

@@ -28,6 +28,13 @@ const PORT = process.env.PORT || 8080;
 const BASE_URL = process.env.BASE_URL || 'https://your-cloud-run-url';
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN || '';
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
+
+// Google Speech‑to‑Text API key.  If provided, the transcribeAudio() function
+// will send caller audio to the Google Speech API for transcription.  Using
+// Google STT avoids the need to build a local mu‑law → wav converter and
+// supports μ‑law audio directly.  Set GOOGLE_SPEECH_API_KEY in your
+// environment (for example via Cloud Run secret) to enable STT.
+const GOOGLE_SPEECH_API_KEY = process.env.GOOGLE_SPEECH_API_KEY || '';
 const AWS_REGION = process.env.AWS_REGION || 'us-west-2';
 const AWS_POLLY_VOICE = process.env.AWS_POLLY_VOICE || 'Joanna';
 
@@ -246,11 +253,44 @@ function pcmToMuLaw(pcmBuffer) {
  * Replace this implementation with calls to your preferred STT service.
  */
 async function transcribeAudio(buffer) {
-  // Example: call OpenAI Whisper API (replace with real code)
-  // const response = await axios.post('https://api.openai.com/v1/audio/transcriptions', ...);
-  // return response.data.text;
-  // For demonstration, we just return an empty string to avoid calling an external API.
-  return '';
+  /*
+   * Transcribe caller audio to text.  If a Google Speech API key is configured
+   * via the environment variable GOOGLE_SPEECH_API_KEY, this function will
+   * perform a synchronous recognition request against the Google Speech API
+   * using the μ‑law encoded audio from Twilio.  If no API key is set the
+   * function returns an empty string which will cause the assistant to echo
+   * the caller's utterance via fallback logic in generateLLMReply().
+   */
+  if (!GOOGLE_SPEECH_API_KEY) {
+    console.warn('No Google Speech API key configured; skipping STT');
+    return '';
+  }
+  try {
+    // The Twilio media payload is 8‑bit μ‑law at 8 kHz.  Google Speech API
+    // accepts μ‑law directly when specified in the config.  Encode the raw
+    // audio buffer to base64 for transmission in the JSON request.
+    const audioContent = buffer.toString('base64');
+    const requestBody = {
+      config: {
+        encoding: 'MULAW',
+        sampleRateHertz: 8000,
+        languageCode: 'en-US'
+      },
+      audio: {
+        content: audioContent
+      }
+    };
+    const url = `https://speech.googleapis.com/v1/speech:recognize?key=${GOOGLE_SPEECH_API_KEY}`;
+    const response = await axios.post(url, requestBody);
+    const results = response.data.results || [];
+    if (results.length > 0 && results[0].alternatives && results[0].alternatives.length > 0) {
+      return results[0].alternatives[0].transcript || '';
+    }
+    return '';
+  } catch (err) {
+    console.error('Error calling Google Speech API:', err.response ? err.response.data : err.message);
+    return '';
+  }
 }
 
 /*
